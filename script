@@ -1,0 +1,98 @@
+/**
+ * ============================================================================
+ * Restriction de l'emprise de la carte au port de Saint-Denis-d'Oléron
+ * ============================================================================
+ *
+ * OBJECTIF
+ *   Empêcher l'utilisateur de déplacer la carte en dehors d'une zone
+ *   géographique donnée (le port de Saint-Denis-d'Oléron).
+ *
+ * PRINCIPE
+ *   OpenLayers accepte l'option `extent` dans le constructeur de `ol.View`.
+ *   Elle contraint le déplacement de la vue à l'intérieur de ce rectangle.
+ *   Cette option ne se modifie pas simplement sur une vue existante : le
+ *   script copie donc les propriétés de la vue courante, y ajoute `extent`,
+ *   puis remplace la vue de la carte par une nouvelle `ol.View`.
+ *
+ * DÉPENDANCES
+ *   - AngularJS        : angular.element(...).scope(), $rootScope.$on(...)
+ *   - OpenLayers (ol)  : ol.proj.transformExtent, ol.View
+ *   - acfMapService    : service de l'application, fournit la carte
+ *                        (getMap, getMapViewImmediate)
+ *   - bg.acf.events    : constantes d'événements de l'application
+ *                        (BASE_LAYER_CHANGED)
+ *
+ * COMPORTEMENT
+ *   1. La restriction est appliquée une première fois quand la carte est prête.
+ *   2. Elle est réappliquée à chaque changement de fond de carte, car la vue
+ *      peut être recréée par l'application à ce moment-là, ce qui ferait
+ *      perdre l'emprise.
+ * ============================================================================
+ */
+
+// Récupère le $rootScope d'Angular depuis l'élément <body>.
+// Nécessaire car ce script s'exécute hors d'un contrôleur ou d'un service
+// Angular, où l'injection de dépendances n'est pas disponible.
+var $rootScope = angular.element('body').scope();
+
+/**
+ * Restreint l'emprise de la vue de la carte au port de Saint-Denis-d'Oléron.
+ *
+ * Prérequis : la carte doit être disponible, c'est pourquoi la fonction est
+ * toujours appelée à l'intérieur d'un `.then(...)` sur `acfMapService.getMap()`.
+ *
+ * @returns {void}
+ */
+// restreindre l'emprise au port de Saint-Denis-d'Oléron
+var restrictToExtent = function(){
+
+  // Accès synchrone à la vue de la carte du service.
+  // Possible sans promesse car la carte est déjà initialisée à cet instant.
+  var mapView = acfMapService.getMapViewImmediate();
+
+  // Objet ol.Map natif d'OpenLayers, encapsulé par le service applicatif.
+  var map = mapView.getNativeMap();
+
+  // Vue OpenLayers courante (ol.View) : centre, zoom, projection, etc.
+  var view = map.getView();
+
+  // Copie des propriétés actuelles de la vue (centre, résolution, zoom,
+  // rotation, projection, ...). Sert de base à la nouvelle vue afin de
+  // conserver l'état courant de l'affichage.
+  var properties = view.getProperties();
+
+  // Emprise maximale autorisée, convertie vers la projection de la vue.
+  //   - Format source : [ouest, sud, est, nord] en degrés (EPSG:4326, WGS84)
+  //       ouest : -1.389495   sud : 46.019691
+  //       est   : -1.331071   nord : 46.063511
+  //   - Projection cible : celle de la vue (view.getProjection()) plutôt que
+  //     'EPSG:3857' écrit en dur, pour rester correct quelle que soit la
+  //     projection du fond de carte actif.
+  var extent = ol.proj.transformExtent(
+    [-1.389495, 46.019691, -1.331071, 46.063511],
+    'EPSG:4326',
+    view.getProjection()   // au lieu de 'EPSG:3857' en dur
+  );
+
+  // Ajoute (ou écrase) l'option `extent` dans les propriétés copiées.
+  // Rappeler la fonction plusieurs fois est sans danger : la valeur est
+  // simplement remplacée, rien ne s'accumule.
+  properties['extent'] = extent;
+
+  // Remplace la vue de la carte par une nouvelle ol.View construite avec les
+  // propriétés copiées + l'emprise. Le centre et le zoom courants sont
+  // conservés, mais les écouteurs attachés à l'ancienne vue sont perdus.
+  map.setView(new ol.View(properties));
+};
+
+// Application initiale : getMap() renvoie une promesse résolue quand la
+// carte est prête, puis restrictToExtent est exécutée.
+acfMapService.getMap().then(restrictToExtent);
+
+// Réapplication à chaque changement de fond de carte.
+// L'application peut recréer la vue lors de ce changement (projection,
+// résolutions ou niveaux de zoom différents selon le fond) ; sans cette
+// écoute, la restriction serait perdue après le premier changement.
+$rootScope.$on(bg.acf.events.BASE_LAYER_CHANGED, function(){
+  acfMapService.getMap().then(restrictToExtent);
+});
