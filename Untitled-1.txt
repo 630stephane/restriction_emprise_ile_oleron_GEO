@@ -1,0 +1,32 @@
+gdalinfo \\pmo\commun\Pmo\Amenagement\SIT\donnees\referentiels\ign\lidar_hd\MNT\MNT.vrt
+
+gdal_translate.exe C:\Users\stephane\Documents\260818_cog_justin\mnt_ile_oleron.tif C:\ms4w\apps\pmo\data\oleron\mnt_ile_oleron_lidarhd.tif -of COG ^ -co BLOCKSIZE=512 ^ -co OVERVIEW_RESAMPLING=BILINEAR ^ -co COMPRESS=DEFLATE ^ -co PREDICTOR=3 ^ -co NUM_THREADS=12 ^ -co BIGTIFF=YES
+
+gdal_translate.exe C:\Users\stephane\Documents\260818_cog_justin\mnt_ile_oleron.tif C:\ms4w\apps\pmo\data\oleron\mnt_ile_oleron_lidarhd.tif -of COG ^ -co BLOCKSIZE=512 ^ -co OVERVIEW_RESAMPLING=BILINEAR ^ -co COMPRESS=DEFLATE ^ -co PREDICTOR=3 ^ -co NUM_THREADS=12 ^ -co BIGTIFF=YES
+
+gdalinfo \\pmo\commun\Pmo\Amenagement\SIT\donnees\referentiels\ign\lidar_hd\MNT\MNT.vrt
+
+gdalinfo C:\ms4w\apps\pmo\data\oleron\MNT_cog.tif
+
+gdal_contour -a  C:\ms4w\apps\pmo\data\oleron\MNT_cog.tif  Y:\Amenagement\SIT\projets\2026\sr\260901_courbe_niveau_50dm_io\contour.shp -i 0.5
+
+https://flux.marennes-oleron.com/cgi-bin/mapserv.exe?map=C:/ms4w/apps/pmo/flux.map&
+
+"C:\ms4w\apps\pmo\data\oleron\MNT_cog.tif"
+
+gdal_contour -a  C:\ms4w\apps\pmo\data\oleron\mnt_soulasserie_260625_cog.tif  \\pmo\commun\Pmo\Amenagement\SIT\projets\2026\sr\260901_courbe_niveau_5dm_io\test_soulasserie.shp -i 0.5
+
+gdal raster contour --interval 0.5 C:\ms4w\apps\pmo\data\oleron\mnt_soulasserie_260625_cog.tif \\pmo\commun\Pmo\Amenagement\SIT\projets\2026\sr\260901_courbe_niveau_5dm_io\test_soulasserie.shp --elevation-name elev
+
+
+gdal raster contour --interval 0.5 \\pmo\commun\Pmo\Amenagement\SIT\projets\2026\sr\mnt_io_w10\mnt_io_w10.0.tif \\pmo\commun\Pmo\Amenagement\SIT\projets\2026\sr\260901_courbe_niveau_5dm_io\courbe_io_w10.shp --elevation-name elev
+
+gdal_rasterize -b 1 -b 2 -b 3 -burn 255 -burn 0 -burn 0 -l mask mask.shp work.tif
+
+gdal_translate.exe \\pmo\commun\Pmo\Amenagement\SIT\projets\2026\sr\260901_courbe_niveau_5dm_io\estompage_io_lidar.tif C:\ms4w\apps\pmo\data\oleron\estompage_io_lidar.tif"mne_cog.tif -of COG ^
+    -co BLOCKSIZE=512 ^
+    -co OVERVIEW_RESAMPLING=BILINEAR ^
+    -co COMPRESS=DEFLATE ^
+    -co PREDICTOR=3 ^
+    -co NUM_THREADS=12 ^
+    -co BIGTIFF=YES
